@@ -14,17 +14,21 @@ export class UbiLoginManager {
      * Avoid calling this function more than 3 times per hour.
      */
     async Login(): Promise<void> {
-        try {
-            const tokenV2 = await this.RequestLogin(UbiAppId.v2)
-            await SaveJSONToFile('private/auth_token_v2.json', tokenV2)
+    try {
+        const tokenV2 = await this.RequestLogin(UbiAppId.v2);
+        if (tokenV2) {
+            await SaveJSONToFile('private/auth_token_v2.json', tokenV2);
+        }
 
-            const tokenV3 = await this.RequestLogin(UbiAppId.v3)
-            await SaveJSONToFile('private/auth_token_v3.json', tokenV3)
+        const tokenV3 = await this.RequestLogin(UbiAppId.v3);
+        if (tokenV3) {
+            await SaveJSONToFile('private/auth_token_v3.json', tokenV3);
         }
-        catch (error) {
-            console.error(error)
-        }
+    } catch (error) {
+        console.error(error);
     }
+}
+
 
     /**
      * Makes an HTTP request to Ubisoft to login to the specified account.
