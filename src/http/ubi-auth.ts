@@ -56,7 +56,11 @@ export class UbiLoginManager {
         }
 
         try {
-            const response = await axios(httpConfig)
+            console.log('✅ Ubisoft login response:', {
+                data: response.data,
+                headers: response.headers
+            });
+
 
             const sessionId = response.headers['ubi-sessionid']
             if (!sessionId) throw new Error('Missing Ubi-SessionId header in login response.')
