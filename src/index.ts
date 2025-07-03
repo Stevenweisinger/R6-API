@@ -9,6 +9,8 @@ import { tooManyRequestsError } from './utilities/errors'
 import { UbiLoginManager } from './http/ubi-auth'
 import ScheduleLogin from './utilities/cron'
 
+config.port = process.env.PORT ? parseInt(process.env.PORT) : config.port;
+
 
 
 // Toggle debug mode.
