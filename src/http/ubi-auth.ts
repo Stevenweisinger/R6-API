@@ -32,7 +32,7 @@ export class UbiLoginManager {
      * @param appId Ubi-AppId header value.
      * @returns Auth token + sessionId object.
      */
-    async RequestLogin(appId: UbiAppId): Promise<R6UserResponse & { sessionId: string }> {
+    async RequestLogin(appId: UbiAppId): Promise<(R6UserResponse & { sessionId: string }) | undefined> {
         const credentials = Buffer.from(`${config.ubi_credentials.email}:${config.ubi_credentials.password}`).toString('base64')
 
         const httpConfig = {
