@@ -14,12 +14,11 @@ async function loadToken(version: 'v2' | 'v3') {
   try {
     const raw = await fs.readFile(filePath, 'utf8')
     const token = JSON.parse(raw)
-    // Check token expiration with 5 minutes buffer
     if (token.expiration && new Date(token.expiration).getTime() > Date.now() + 5 * 60 * 1000) {
       return token
     }
   } catch {
-    // File doesn't exist or invalid JSON
+    // file missing or invalid
   }
   return null
 }
@@ -33,8 +32,10 @@ export class UbiLoginManager {
   static instance: UbiLoginManager
 
   /**
-   * Logs into Ubisoft account with V2 and V3 appIds, caches tokens to disk.
-   * Avoid calling this more than 3 times per hour to prevent rate limits.
+   * Logs into a Ubisoft account twice, once with a V2 appId and once with a
+   * V3 appId. Saves both auth tokens + session ID to the `private/auth_token_{VERSION}` files.
+   * 
+   * Avoid calling this function more than 3 times per hour.
    */
   async Login(): Promise<void> {
     try {
@@ -55,11 +56,12 @@ export class UbiLoginManager {
   }
 
   /**
-   * Sends login request to Ubisoft for the given appId.
+   * Makes an HTTP request to Ubisoft to login to the specified account.
+   * 
    * @param appId Ubi-AppId header value.
-   * @returns Auth token + sessionId.
+   * @returns Auth token + sessionId object.
    */
-  async RequestLogin(appId: UbiAppId): Promise<(R6UserResponse & { sessionId: string }) | undefined> {
+  async RequestLogin(appId: UbiAppId): Promise<(R6UserResponse & { sessionId: string, expiration: string }) | undefined> {
     const credentials = Buffer.from(`${config.ubi_credentials.email}:${config.ubi_credentials.password}`).toString('base64')
 
     const httpConfig = {
@@ -84,19 +86,22 @@ export class UbiLoginManager {
       const sessionId = response.headers['ubi-sessionid']
       if (!sessionId) throw new Error('Missing Ubi-SessionId header in login response.')
 
+      // Ubisoft usually sends expiration in data or headers, if missing set 30 min default expiry:
+      const expiration = response.data.expiration || new Date(Date.now() + 30 * 60 * 1000).toISOString()
+
       return {
         ...response.data,
-        sessionId
+        sessionId,
+        expiration
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError
-
         if (axiosError.response?.status) {
           switch (axiosError.response?.status) {
             case 401: throw 'Account does not exist.'
             case 409: throw 'Captcha needed.'
-            case 429: throw '❌ Too many requests. Rate limit hit.'
+            case 429: throw 'Too many requests. Rate limit hit.'
             default: throw error
           }
         }
