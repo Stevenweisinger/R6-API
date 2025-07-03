@@ -10,8 +10,6 @@ import { secondsSinceEpoch } from '../utilities/timestamps'
 import { UbiAccountIds, UbiDataByUserId } from '../utilities/interfaces/simple'
 import { DefaultR6LifetimesStats, DefaultR6OperatorsGamemode, MergeR6LifetimeStats, SimplifiedR6OperatorStats } from '../utilities/parsing-helpers'
 
-
-
 /**
  * Called by /r6/profiles/:username/:platform route. Fetches locally stored Ubisoft auth tokens,
  * calls functions that make requests to all Ubisoft stats endpoints, sorts and returns combined data. 
@@ -255,7 +253,7 @@ async function RequestR6UserById(profileId: string, token: UbiToken): Promise<R6
 }
 
 /**
- * Requests core user data from Ubiosft and returns a parsed version of it.
+ * Requests core user data from Ubisoft and returns a parsed version of it.
  * Limit: 50 players.
  * Token Version: V2
  * 
