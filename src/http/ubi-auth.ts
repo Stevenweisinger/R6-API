@@ -14,21 +14,20 @@ export class UbiLoginManager {
      * Avoid calling this function more than 3 times per hour.
      */
     async Login(): Promise<void> {
-    try {
-        const tokenV2 = await this.RequestLogin(UbiAppId.v2);
-        if (tokenV2) {
-            await SaveJSONToFile('private/auth_token_v2.json', tokenV2);
-        }
+        try {
+            const tokenV2 = await this.RequestLogin(UbiAppId.v2);
+            if (tokenV2) {
+                await SaveJSONToFile('private/auth_token_v2.json', tokenV2);
+            }
 
-        const tokenV3 = await this.RequestLogin(UbiAppId.v3);
-        if (tokenV3) {
-            await SaveJSONToFile('private/auth_token_v3.json', tokenV3);
+            const tokenV3 = await this.RequestLogin(UbiAppId.v3);
+            if (tokenV3) {
+                await SaveJSONToFile('private/auth_token_v3.json', tokenV3);
+            }
+        } catch (error) {
+            console.error(error);
         }
-    } catch (error) {
-        console.error(error);
     }
-}
-
 
     /**
      * Makes an HTTP request to Ubisoft to login to the specified account.
@@ -37,7 +36,7 @@ export class UbiLoginManager {
      * @returns Auth token + sessionId object.
      */
     async RequestLogin(appId: UbiAppId): Promise<(R6UserResponse & { sessionId: string }) | undefined> {
-        const credentials = Buffer.from(`${config.ubi_credentials.email}:${config.ubi_credentials.password}`).toString('base64')
+        const credentials = Buffer.from(`${config.ubi_credentials.email}:${config.ubi_credentials.password}`).toString('base64');
 
         const httpConfig = {
             method: 'POST',
@@ -53,38 +52,44 @@ export class UbiLoginManager {
             data: JSON.stringify({
                 rememberMe: true
             })
-        }
+        };
 
         try {
+            const response = await axios(httpConfig);
+
             console.log('✅ Ubisoft login response:', {
                 data: response.data,
                 headers: response.headers
             });
 
-
-            const sessionId = response.headers['ubi-sessionid']
-            if (!sessionId) throw new Error('Missing Ubi-SessionId header in login response.')
+            const sessionId = response.headers['ubi-sessionid'];
+            if (!sessionId) {
+                throw new Error('Missing Ubi-SessionId header in login response.');
+            }
 
             return {
                 ...response.data,
                 sessionId
-            }
-        }
-        catch (error) {
+            };
+        } catch (error) {
             if (axios.isAxiosError(error)) {
-                const axiosError = error as AxiosError
+                const axiosError = error as AxiosError;
 
                 if (axiosError.response?.status) {
-                    switch (axiosError.response?.status) {
-                        case 401: throw 'Account does not exist.'
-                        case 409: throw 'Captcha needed.'
-                        case 429: throw 'Too many requests.'
-                        default: throw error
+                    switch (axiosError.response.status) {
+                        case 401:
+                            throw 'Account does not exist.';
+                        case 409:
+                            throw 'Captcha needed.';
+                        case 429:
+                            throw 'Too many requests.';
+                        default:
+                            throw error;
                     }
                 }
-            } else {
-                throw error
             }
+
+            throw error;
         }
     }
 }
