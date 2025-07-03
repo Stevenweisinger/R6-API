@@ -4,6 +4,7 @@
   "description": "Updated Rainbow Six®: Siege API wrapper for user stats.",
   "main": "src/index.ts",
   "scripts": {
+    "postinstall": "mkdir -p private",
     "start": "npx ts-node src/index.ts"
   },
   "keywords": [
