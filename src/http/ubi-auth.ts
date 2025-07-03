@@ -62,7 +62,8 @@ export class UbiLoginManager {
                 headers: response.headers
             });
 
-            const sessionId = response.headers['ubi-sessionid'];
+            const sessionId = response.data.sessionId;
+
             if (!sessionId) throw new Error('Missing Ubi-SessionId header in login response.');
 
             return {
