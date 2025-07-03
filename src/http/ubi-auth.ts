@@ -4,26 +4,22 @@ import { SaveJSONToFile } from '../utilities/file-stream'
 import { R6UserResponse } from '../utilities/interfaces/http_interfaces'
 import { UbiAppId } from '../utilities/interfaces/enums'
 
-
-
 export class UbiLoginManager {
     static instance: UbiLoginManager
 
     /**
-     * Logs into a Ubisoft acount twice, once with a V2 appId and once with a
-     * V3 appId. Saves both auth tokens to the `private/auth_token_{VERSION}` files.
+     * Logs into a Ubisoft account twice, once with a V2 appId and once with a
+     * V3 appId. Saves both auth tokens + session ID to the `private/auth_token_{VERSION}` files.
      * 
      * Avoid calling this function more than 3 times per hour.
-     * 
-     * @returns Whether the login was aborted.
      */
     async Login(): Promise<void> {
         try {
             const tokenV2 = await this.RequestLogin(UbiAppId.v2)
-            await SaveJSONToFile('private/auth_token_v2.json', tokenV2 as R6UserResponse)
-    
+            await SaveJSONToFile('private/auth_token_v2.json', tokenV2)
+
             const tokenV3 = await this.RequestLogin(UbiAppId.v3)
-            await SaveJSONToFile('private/auth_token_v3.json', tokenV3 as R6UserResponse)
+            await SaveJSONToFile('private/auth_token_v3.json', tokenV3)
         }
         catch (error) {
             console.error(error)
@@ -34,9 +30,9 @@ export class UbiLoginManager {
      * Makes an HTTP request to Ubisoft to login to the specified account.
      * 
      * @param appId Ubi-AppId header value.
-     * @returns Simplified token object.
+     * @returns Auth token + sessionId object.
      */
-    async RequestLogin(appId: UbiAppId): Promise<R6UserResponse | void> {
+    async RequestLogin(appId: UbiAppId): Promise<R6UserResponse & { sessionId: string }> {
         const credentials = Buffer.from(`${config.ubi_credentials.email}:${config.ubi_credentials.password}`).toString('base64')
 
         const httpConfig = {
@@ -57,7 +53,14 @@ export class UbiLoginManager {
 
         try {
             const response = await axios(httpConfig)
-            return response.data as R6UserResponse
+
+            const sessionId = response.headers['ubi-sessionid']
+            if (!sessionId) throw new Error('Missing Ubi-SessionId header in login response.')
+
+            return {
+                ...response.data,
+                sessionId
+            }
         }
         catch (error) {
             if (axios.isAxiosError(error)) {
@@ -71,8 +74,9 @@ export class UbiLoginManager {
                         default: throw error
                     }
                 }
+            } else {
+                throw error
             }
-            else { throw error }
         }
     }
 }
