@@ -62,7 +62,7 @@ else {
     
     // Create Express instance on this CPU.
     const app = express()
-
+    app.set('trust proxy', 1)
     // Enable Helmet security.
     app.use(helmet())
     // Enable rate limiter.
